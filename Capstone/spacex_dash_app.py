@@ -73,11 +73,7 @@ def get_pie_chart(entered_site):
         filtered_df = spacex_df[spacex_df["Launch Site"]==entered_site]
         filtered_df["class"].replace(to_replace=[0,1],value=["Failure","Success"],inplace=True)
         
-        #success_launches = filtered_df["class"].value_counts().loc[1]
-        #failure_launches = filtered_df["class"].value_counts().loc[0]
         fig = px.pie(filtered_df,
-                    #values=[success_launches,failure_launches],
-                    #names=["Success","Failure"],
                     names = "class",
                     color = "class",
                     color_discrete_map={"Failure":"red","Success":"green"},
