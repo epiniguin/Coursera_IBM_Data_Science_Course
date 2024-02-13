@@ -17,9 +17,14 @@ launch_site_options = [{'label':'All sites', 'value':'ALL'}]
 for site in launch_sites:
     launch_site_options.append({'label':site,'value':site})
 
+#Marks for the payload mass range slider
+mark_step = 500
+mark_max = int((max_payload//mark_step)*mark_step + mark_step)
+marks={i: '{}'.format(i) for i in range(0,mark_max+1,mark_step)}
+
 # Create a dash application
 app = dash.Dash(__name__)
-
+app.title = "SpaceX Launch Records Dashboard"
 # Create an app layout
 app.layout = html.Div(children=[html.H1('SpaceX Launch Records Dashboard',
                                         style={'textAlign': 'center', 'color': '#503D36',
@@ -42,11 +47,13 @@ app.layout = html.Div(children=[html.H1('SpaceX Launch Records Dashboard',
 
                                 html.P("Payload range (Kg):"),
                                 # TASK 3: Add a slider to select payload range
+                                
                                 dcc.RangeSlider(id='payload-slider',
                                                 min = 0,
-                                                max = (max_payload//1000)*1000 + 1000,
-                                                step = 1000,
-                                                value = [min_payload,max_payload]
+                                                max = mark_max,
+                                                step = mark_step,
+                                                value = [min_payload-mark_step,max_payload+mark_step],
+                                                marks=marks
                                                 ),
 
                                 # TASK 4: Add a scatter chart to show the correlation between payload and launch success
@@ -65,8 +72,8 @@ def get_pie_chart(entered_site):
     if entered_site == 'ALL':
         fig = px.pie(spacex_df, values='class', 
                     names="Launch Site",
-                    labels = {"class":"Successful launches"},
-                    title='Total success launches by site',
+                    labels = {"class":"Successful landings"},
+                    title='Total success landings by site',
                     hole=.2)
         
     else:
@@ -79,8 +86,9 @@ def get_pie_chart(entered_site):
                     color_discrete_map={"Failure":"red","Success":"green"},
                     category_orders = {"class":["Success","Failure"]},
                     labels = {"class":"Outcome"},
-                    title='Successful vs Failure launches for site ' + entered_site,
+                    title='Successful vs Failed landings for site ' + entered_site,
                     hole=.2)
+    fig.update_layout(title_x=0.5,title_font_size=25)
     return fig
 # TASK 4:
 # Add a callback function for `site-dropdown` and `payload-slider` as inputs, `success-payload-scatter-chart` as output
@@ -95,18 +103,25 @@ def get_scatter_plot(entered_site,entered_payload):
     filtered_df = spacex_df[(spacex_df["Payload Mass (kg)"]>=entered_payload[0])
                             & (spacex_df["Payload Mass (kg)"]<=entered_payload[1])]
     if entered_site == 'ALL':
-        title = "Correlation between Payload mass and Success for all Sites"
+        title = "Correlation between Payload mass and Successful landing for all Sites"
     else:
         filtered_df = filtered_df[filtered_df["Launch Site"]==entered_site]
-        title = "Correlation between Payload mass and Success for " + entered_site
+        title = "Correlation between Payload mass and Successful landing for " + entered_site
 
     fig = px.scatter(filtered_df,
                    x = "Payload Mass (kg)",
                    y = "class",
                    color = "Booster Version Category",
                    title = title,
-                   labels={"class":"Outcome"}
+                   labels={"class":"Outcome","Booster Version Category":"Booster Version"}
                    )
+    fig.update_layout(title_x=0.5,title_font_size=25,
+                      yaxis = dict(
+                        tickmode = 'array',
+                        tickvals = [0,1],
+                        ticktext = ['Failure','Success']
+                        ),
+                      )
     return fig
 # Run the app
 if __name__ == '__main__':
